@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marriage Health Check - Couple Assessment</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .logo-container {
+            max-width: 250px;
+            max-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .logo-container img {
+            max-width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+        }
+        .copyright-footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 3px solid #667eea;
+            margin-top: 30px;
+            border-radius: 0 0 12px 12px;
+            font-size: 13px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .code-box {
+            background: #f0f0f0;
+            border: 2px dashed #667eea;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const EMBEDDED_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAFZCAYAAAAGpF0bAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVR4nOzdd3wUVdfA8d/MbjabSkijBgKEjoiA9CYiKAIqiooVrNjFxvvYsDzWB6VYsKCCKBZUREQQQemg0nsNLUAIoYT0nlvu7Pz+OCEkJLTsLiRwvn5GkuydO3d2A7u3nQNCnF/aAcuAbue6IUIIIYQQQgghhPA9HbgLOAIoIBu4+Zy2SAghhBBCCCGEED4VCozH7PgXPzzAU5iDA0IIIYQQQgghhKjE4jGX/B/f+S8+CPABYD9H7RNCCCGEEEIIIYSXrgQOcuLOf/FjOhB+bpophBBCCCGEEEKI8rABzwIOTq/zf/T4F6hzDtorhBBCCCGEEEKIM...";
+
+        const StarIcon = () => (
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+        );
+
+        const CheckCircleIcon = () => (
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        );
+
+        const AlertTriangleIcon = () => (
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        );
+
+        const MarriageHealthCheck = () => {
+            const [stage, setStage] = useState('start'); // start, partner1, partner2, results
+            const [partnerCode, setPartnerCode] = useState('');
+            const [inputCode, setInputCode] = useState('');
+            const [partner1Name, setPartner1Name] = useState('');
+            const [partner2Name, setPartner2Name] = useState('');
+            const [currentPartner, setCurrentPartner] = useState(1);
+            
+            const questions = {
+                spiritual: [
+                    "We read the Bible together on a regular basis",
+                    "We pray together on a regular basis",
+                    "I pray for my spouse regularly",
+                    "We have a God-centered relationship",
+                    "We attend church together on a regular basis"
+                ],
+                commitment: [
+                    "My spouse has my best interest at heart",
+                    "I have my spouse's best interest at heart",
+                    "My spouse looks out for my interests as much or more than his/her own",
+                    "I look out for my spouse's interests as much or more than my own",
+                    "I am committed to my marriage",
+                    "I put my spouse's interests before my own",
+                    "My spouse is trustworthy (does what they say will do)",
+                    "My spouse is committed to our marriage",
+                    "We make our marriage a priority"
+                ],
+                parenting: [
+                    "Our children are not allowed to be a hindrance to our marriage",
+                    "We have a God-centered rather than a child centered marriage",
+                    "We support each other's authority to the kids",
+                    "We do not allow the children to divide us"
+                ]
+            };
+
+            const [ratings, setRatings] = useState(() => {
+                const initial = {};
+                Object.keys(questions).forEach(category => {
+                    questions[category].forEach((_, idx) => {
+                        const key = `${category}-${idx}`;
+                        initial[key] = 5;
+                    });
+                });
+                return initial;
+            });
+
+            const generateCode = () => {
+                return Math.random().toString(36).substring(2, 8).toUpperCase();
+            };
+
+            const savePartner1Data = () => {
+                const code = generateCode();
+                const data = {
+                    name: partner1Name,
+                    ratings: ratings,
+                    timestamp: Date.now()
+                };
+                try {
+                    localStorage.setItem(`marriage_${code}`, JSON.stringify(data));
+                    setPartnerCode(code);
+                    setStage('partner1complete');
+                } catch (e) {
+                    alert('Unable to save data. Please make sure you are using this file in a web browser (not in Claude.ai preview).');
+                }
+            };
+
+            const loadPartner1Data = (code) => {
+                try {
+                    const data = localStorage.getItem(`marriage_${code}`);
+                    if (data) {
+                        return JSON.parse(data);
+                    }
+                    return null;
+                } catch (e) {
+                    alert('Unable to load data. Please make sure you downloaded this file and are opening it in a web browser.');
+                    return null;
+                }
+            };
+
+            const updateRating = (category, index, value) => {
+                const key = `${category}-${index}`;
+                setRatings(prev => ({
+                    ...prev,
+                    [key]: parseInt(value)
+                }));
+            };
+
+            const startAsPartner1 = () => {
+                setCurrentPartner(1);
+                setStage('partner1');
+            };
+
+            const startAsPartner2 = () => {
+                setStage('entercode');
+            };
+
+            const submitCode = () => {
+                const data = loadPartner1Data(inputCode.toUpperCase());
+                if (data) {
+                    setPartner1Name(data.name);
+                    setPartnerCode(inputCode.toUpperCase());
+                    setCurrentPartner(2);
+                    setStage('partner2');
+                } else {
+                    alert('Invalid code. Please check and try again.');
+                }
+            };
+
+            const calculateCombinedScores = () => {
+                const partner1Data = loadPartner1Data(partnerCode);
+                if (!partner1Data) return null;
+
+                const scores = {
+                    partner1: { spiritual: 0, commitment: 0, parenting: 0 },
+                    partner2: { spiritual: 0, commitment: 0, parenting: 0 }
+                };
+                const counts = { spiritual: 0, commitment: 0, parenting: 0 };
+
+                Object.keys(questions).forEach(category => {
+                    questions[category].forEach((_, idx) => {
+                        const key = `${category}-${idx}`;
+                        scores.partner1[category] += partner1Data.ratings[key];
+                        scores.partner2[category] += ratings[key];
+                        counts[category] += 1;
+                    });
+                });
+
+                const averages = {
+                    partner1: {
+                        spiritual: (scores.partner1.spiritual / counts.spiritual).toFixed(1),
+                        commitment: (scores.partner1.commitment / counts.commitment).toFixed(1),
+                        parenting: (scores.partner1.parenting / counts.parenting).toFixed(1)
+                    },
+                    partner2: {
+                        spiritual: (scores.partner2.spiritual / counts.spiritual).toFixed(1),
+                        commitment: (scores.partner2.commitment / counts.commitment).toFixed(1),
+                        parenting: (scores.partner2.parenting / counts.parenting).toFixed(1)
+                    },
+                    combined: {
+                        spiritual: ((scores.partner1.spiritual + scores.partner2.spiritual) / (counts.spiritual * 2)).toFixed(1),
+                        commitment: ((scores.partner1.commitment + scores.partner2.commitment) / (counts.commitment * 2)).toFixed(1),
+                        parenting: ((scores.partner1.parenting + scores.partner2.parenting) / (counts.parenting * 2)).toFixed(1)
+                    }
+                };
+
+                const overall = {
+                    partner1: parseFloat(((parseFloat(averages.partner1.spiritual) + parseFloat(averages.partner1.commitment) + parseFloat(averages.partner1.parenting)) / 3).toFixed(1)),
+                    partner2: parseFloat(((parseFloat(averages.partner2.spiritual) + parseFloat(averages.partner2.commitment) + parseFloat(averages.partner2.parenting)) / 3).toFixed(1)),
+                    combined: parseFloat(((parseFloat(averages.combined.spiritual) + parseFloat(averages.combined.commitment) + parseFloat(averages.combined.parenting)) / 3).toFixed(1))
+                };
+
+                return { averages, overall, partner1Ratings: partner1Data.ratings, partner2Ratings: ratings };
+            };
+
+            const getHealthStatus = (score) => {
+                if (score >= 8.5) return { status: 'BLUE', label: 'Thriving', color: 'bg-blue-500', textColor: 'text-blue-700', bgColor: 'bg-blue-50', icon: StarIcon };
+                if (score >= 7) return { status: 'GREEN', label: 'Healthy', color: 'bg-green-500', textColor: 'text-green-700', bgColor: 'bg-green-50', icon: CheckCircleIcon };
+                if (score >= 5) return { status: 'AMBER', label: 'Needs Attention', color: 'bg-amber-500', textColor: 'text-amber-700', bgColor: 'bg-amber-50', icon: AlertTriangleIcon };
+                return { status: 'RED', label: 'Critical', color: 'bg-red-500', textColor: 'text-red-700', bgColor: 'bg-red-50', icon: AlertTriangleIcon };
+            };
+
+            const getRecommendations = (status) => {
+                const recommendations = {
+                    BLUE: [
+                        "Celebrate your strong marriage! Continue your current practices.",
+                        "Consider mentoring other couples who could benefit from your experience.",
+                        "Keep investing in your relationship to maintain this thriving status."
+                    ],
+                    GREEN: [
+                        "Your marriage is healthy with room to grow stronger.",
+                        "Identify 1-2 specific areas to focus on together.",
+                        "Consider a marriage enrichment retreat or workshop."
+                    ],
+                    AMBER: [
+                        "Your marriage needs intentional attention and care.",
+                        "Schedule weekly dedicated time together without distractions.",
+                        "Consider working with a marriage counselor or mentor couple.",
+                        "Focus on improving communication in areas where you disagree."
+                    ],
+                    RED: [
+                        "Your marriage requires immediate attention and support.",
+                        "Seek professional marriage counseling as soon as possible.",
+                        "Connect with a pastor, therapist, or trusted mentor together.",
+                        "Both partners need to prioritize the relationship above all else."
+                    ]
+                };
+                return recommendations[status] || [];
+            };
+
+            // START SCREEN
+            if (stage === 'start') {
+                return (
+                    <div className="container">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden p-8">
+                            {EMBEDDED_LOGO && (
+                                <div className="logo-container mb-6">
+                                    <img src={EMBEDDED_LOGO} alt="RCCG House of Praise Logo" />
+                                </div>
+                            )}
+                            
+                            <div className="text-center mb-8">
+                                <h1 className="text-4xl font-bold text-gray-800 mb-4">Marriage Health Check</h1>
+                                <p className="text-xl text-gray-600 mb-4">Couple Assessment</p>
+                                <p className="text-gray-600">Both partners complete independently, then see combined results</p>
+                            </div>
+
+                            <div className="max-w-md mx-auto space-y-4">
+                                <button
+                                    onClick={startAsPartner1}
+                                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-4 rounded-xl text-xl font-bold hover:from-blue-600 hover:to-blue-700 transition shadow-lg"
+                                >
+                                    Start New Assessment (Partner 1)
+                                </button>
+                                
+                                <button
+                                    onClick={startAsPartner2}
+                                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl text-xl font-bold hover:from-purple-600 hover:to-purple-700 transition shadow-lg"
+                                >
+                                    Join With Code (Partner 2)
+                                </button>
+                            </div>
+
+                            <div className="copyright-footer mt-8">
+                                <strong>© The Marriage Health Check</strong> is the intellectual property of <strong>RCCG House of Praise Christian Centre, Birmingham, UK</strong>.<br/>
+                                Unauthorised use, reproduction, or distribution is strictly prohibited.
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // ENTER CODE SCREEN
+            if (stage === 'entercode') {
+                return (
+                    <div className="container">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden p-8">
+                            {EMBEDDED_LOGO && (
+                                <div className="logo-container mb-6">
+                                    <img src={EMBEDDED_LOGO} alt="RCCG House of Praise Logo" />
+                                </div>
+                            )}
+                            
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl font-bold text-gray-800 mb-4">Enter Partner's Code</h1>
+                                <p className="text-gray-600">Enter the code provided by your partner</p>
+                            </div>
+
+                            <div className="max-w-md mx-auto space-y-4">
+                                <input
+                                    type="text"
+                                    value={inputCode}
+                                    onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                                    placeholder="Enter 6-character code"
+                                    maxLength="6"
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-2xl font-bold uppercase tracking-wider"
+                                />
+                                
+                                <button
+                                    onClick={submitCode}
+                                    disabled={inputCode.length !== 6}
+                                    className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl text-xl font-bold hover:from-purple-600 hover:to-purple-700 transition shadow-lg disabled:opacity-50"
+                                >
+                                    Continue
+                                </button>
+
+                                <button
+                                    onClick={() => setStage('start')}
+                                    className="w-full bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition"
+                                >
+                                    Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // PARTNER 1 COMPLETE SCREEN
+            if (stage === 'partner1complete') {
+                return (
+                    <div className="container">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden p-8">
+                            {EMBEDDED_LOGO && (
+                                <div className="logo-container mb-6">
+                                    <img src={EMBEDDED_LOGO} alt="RCCG House of Praise Logo" />
+                                </div>
+                            )}
+                            
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl font-bold text-gray-800 mb-4">✅ Assessment Complete!</h1>
+                                <p className="text-xl text-gray-600 mb-6">Share this code with your partner:</p>
+                                
+                                <div className="code-box">
+                                    {partnerCode}
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 my-6 text-left">
+                                    <h3 className="font-bold text-blue-900 mb-2">📱 Next Steps:</h3>
+                                    <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                                        <li>Share the code <strong>{partnerCode}</strong> with your partner</li>
+                                        <li>Your partner opens this same file</li>
+                                        <li>They click "Join With Code" and enter: <strong>{partnerCode}</strong></li>
+                                        <li>After they complete, you'll both see combined results</li>
+                                    </ol>
+                                </div>
+
+                                <p className="text-sm text-gray-500 mt-4">⚠️ Keep this window open or remember your code</p>
+                            </div>
+
+                            <button
+                                onClick={() => setStage('start')}
+                                className="w-full bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition"
+                            >
+                                Start Over
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // ASSESSMENT SCREEN (Partner 1 or 2)
+            if (stage === 'partner1' || stage === 'partner2') {
+                return (
+                    <div className="container">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+                            <div className="p-8">
+                                {EMBEDDED_LOGO && (
+                                    <div className="logo-container mb-6">
+                                        <img src={EMBEDDED_LOGO} alt="RCCG House of Praise Logo" />
+                                    </div>
+                                )}
+                                
+                                <div className="text-center mb-8">
+                                    <div className={`inline-block px-4 py-2 rounded-full ${currentPartner === 1 ? 'bg-blue-500' : 'bg-purple-500'} text-white font-bold mb-4`}>
+                                        Partner {currentPartner}
+                                    </div>
+                                    <h1 className="text-4xl font-bold text-gray-800 mb-3">Marriage Health Check</h1>
+                                    <p className="text-gray-600 text-lg">Rate each statement from 1 (Strongly Disagree) to 10 (Strongly Agree)</p>
+                                </div>
+
+                                <div className="max-w-md mx-auto mb-8">
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Your Name</label>
+                                    <input
+                                        type="text"
+                                        value={currentPartner === 1 ? partner1Name : partner2Name}
+                                        onChange={(e) => currentPartner === 1 ? setPartner1Name(e.target.value) : setPartner2Name(e.target.value)}
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                                        placeholder="Enter your name..."
+                                    />
+                                </div>
+
+                                <div className="space-y-8">
+                                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-300">
+                                        <h2 className="text-2xl font-bold text-purple-900 mb-6">Spiritual Development</h2>
+                                        {questions.spiritual.map((question, idx) => (
+                                            <div key={idx} className="mb-6 pb-6 border-b-2 border-purple-200 last:border-b-0">
+                                                <p className="text-gray-800 mb-4 font-medium">{idx + 1}. {question}</p>
+                                                <div className="max-w-md mx-auto">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="10"
+                                                        value={ratings[`spiritual-${idx}`]}
+                                                        onChange={(e) => updateRating('spiritual', idx, e.target.value)}
+                                                        className="w-full mb-2"
+                                                    />
+                                                    <div className="text-center text-3xl font-bold text-purple-700 bg-white rounded-lg py-3 shadow">{ratings[`spiritual-${idx}`]}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-xl p-6 border-2 border-pink-300">
+                                        <h2 className="text-2xl font-bold text-pink-900 mb-6">Selfless Love & Commitment</h2>
+                                        {questions.commitment.map((question, idx) => (
+                                            <div key={idx} className="mb-6 pb-6 border-b-2 border-pink-200 last:border-b-0">
+                                                <p className="text-gray-800 mb-4 font-medium">{idx + 6}. {question}</p>
+                                                <div className="max-w-md mx-auto">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="10"
+                                                        value={ratings[`commitment-${idx}`]}
+                                                        onChange={(e) => updateRating('commitment', idx, e.target.value)}
+                                                        className="w-full mb-2"
+                                                    />
+                                                    <div className="text-center text-3xl font-bold text-pink-700 bg-white rounded-lg py-3 shadow">{ratings[`commitment-${idx}`]}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-300">
+                                        <h2 className="text-2xl font-bold text-blue-900 mb-6">Parenting Partnership <span className="text-sm font-normal">(if applicable)</span></h2>
+                                        {questions.parenting.map((question, idx) => (
+                                            <div key={idx} className="mb-6 pb-6 border-b-2 border-blue-200 last:border-b-0">
+                                                <p className="text-gray-800 mb-4 font-medium">{idx + 15}. {question}</p>
+                                                <div className="max-w-md mx-auto">
+                                                    <input
+                                                        type="range"
+                                                        min="1"
+                                                        max="10"
+                                                        value={ratings[`parenting-${idx}`]}
+                                                        onChange={(e) => updateRating('parenting', idx, e.target.value)}
+                                                        className="w-full mb-2"
+                                                    />
+                                                    <div className="text-center text-3xl font-bold text-blue-700 bg-white rounded-lg py-3 shadow">{ratings[`parenting-${idx}`]}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 text-center">
+                                    <button 
+                                        onClick={() => {
+                                            if (currentPartner === 1) {
+                                                savePartner1Data();
+                                            } else {
+                                                setStage('results');
+                                            }
+                                        }}
+                                        className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-12 py-4 rounded-xl text-xl font-bold hover:from-pink-600 hover:to-purple-700 transition shadow-xl transform hover:scale-105"
+                                    >
+                                        {currentPartner === 1 ? 'Complete & Get Code' : 'View Combined Results'}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="copyright-footer">
+                                <strong>© The Marriage Health Check</strong> is the intellectual property of <strong>RCCG House of Praise Christian Centre, Birmingham, UK</strong>.<br/>
+                                Unauthorised use, reproduction, or distribution is strictly prohibited.
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // RESULTS SCREEN
+            if (stage === 'results') {
+                const combinedData = calculateCombinedScores();
+                if (!combinedData) {
+                    return <div className="text-white text-center">Error loading data</div>;
+                }
+
+                const healthStatus = getHealthStatus(combinedData.overall.combined);
+                const Icon = healthStatus.icon;
+
+                return (
+                    <div className="container">
+                        <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+                            <div className="p-8">
+                                {EMBEDDED_LOGO && (
+                                    <div className="logo-container mb-6">
+                                        <img src={EMBEDDED_LOGO} alt="RCCG House of Praise Logo" />
+                                    </div>
+                                )}
+                                
+                                <div className="text-center mb-8">
+                                    <h1 className="text-4xl font-bold text-gray-800 mb-2">Combined Marriage Health Results</h1>
+                                    <p className="text-gray-600 text-lg">{partner1Name} & {partner2Name}</p>
+                                    <p className="text-sm text-gray-500 mt-2">{new Date().toLocaleDateString()}</p>
+                                </div>
+
+                                <div className={`${healthStatus.bgColor} border-4 ${healthStatus.color.replace('bg-', 'border-')} rounded-xl p-8 mb-8`}>
+                                    <div className="flex items-center justify-center mb-4">
+                                        <div className={healthStatus.textColor}>
+                                            <Icon />
+                                        </div>
+                                    </div>
+                                    <h2 className="text-5xl font-bold text-center text-gray-800 mb-4">
+                                        {combinedData.overall.combined.toFixed(1)} / 10
+                                    </h2>
+                                    <div className="text-center">
+                                        <span className={`inline-block px-8 py-3 rounded-full ${healthStatus.color} text-white text-2xl font-bold shadow-lg`}>
+                                            {healthStatus.status}: {healthStatus.label}
+                                        </span>
+                                    </div>
+                                    <div className="mt-6 grid grid-cols-2 gap-4 text-center">
+                                        <div>
+                                            <p className="text-sm text-gray-600 font-bold">{partner1Name}</p>
+                                            <p className="text-3xl font-bold text-gray-800">{combinedData.overall.partner1.toFixed(1)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600 font-bold">{partner2Name}</p>
+                                            <p className="text-3xl font-bold text-gray-800">{combinedData.overall.partner2.toFixed(1)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-xl p-6 shadow-lg">
+                                        <h3 className="font-semibold text-purple-900 mb-2 text-lg">Spiritual Connection</h3>
+                                        <div className="text-4xl font-bold text-purple-800 mb-2">{combinedData.averages.combined.spiritual}</div>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                                <p className="text-gray-600">{partner1Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner1.spiritual}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-600">{partner2Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner2.spiritual}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 border-2 border-pink-300 rounded-xl p-6 shadow-lg">
+                                        <h3 className="font-semibold text-pink-900 mb-2 text-lg">Love & Commitment</h3>
+                                        <div className="text-4xl font-bold text-pink-800 mb-2">{combinedData.averages.combined.commitment}</div>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                                <p className="text-gray-600">{partner1Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner1.commitment}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-600">{partner2Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner2.commitment}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-6 shadow-lg">
+                                        <h3 className="font-semibold text-blue-900 mb-2 text-lg">Parenting Partnership</h3>
+                                        <div className="text-4xl font-bold text-blue-800 mb-2">{combinedData.averages.combined.parenting}</div>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                                <p className="text-gray-600">{partner1Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner1.parenting}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-600">{partner2Name}</p>
+                                                <p className="font-bold">{combinedData.averages.partner2.parenting}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 mb-6 border border-gray-300">
+                                    <h3 className="text-2xl font-bold text-gray-800 mb-4">📋 Recommended Next Steps</h3>
+                                    <ul className="space-y-3">
+                                        {getRecommendations(healthStatus.status).map((rec, idx) => (
+                                            <li key={idx} className="flex items-start">
+                                                <span className="text-gray-600 mr-3 text-xl">•</span>
+                                                <span className="text-gray-700 text-lg">{rec}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="text-center space-x-4 no-print">
+                                    <button 
+                                        onClick={() => {
+                                            try {
+                                                localStorage.removeItem(`marriage_${partnerCode}`);
+                                            } catch(e) {}
+                                            setStage('start');
+                                            setPartnerCode('');
+                                            setInputCode('');
+                                            setPartner1Name('');
+                                            setPartner2Name('');
+                                        }}
+                                        className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-8 py-3 rounded-lg hover:from-gray-700 hover:to-gray-800 transition shadow-lg font-semibold"
+                                    >
+                                        Start Over
+                                    </button>
+                                    <button 
+                                        onClick={() => window.print()}
+                                        className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-lg hover:from-green-700 hover:to-green-800 transition shadow-lg font-semibold"
+                                    >
+                                        Print Results
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="copyright-footer">
+                                <strong>© The Marriage Health Check</strong> is the intellectual property of <strong>RCCG House of Praise Christian Centre, Birmingham, UK</strong>.<br/>
+                                Unauthorised use, reproduction, or distribution is strictly prohibited.
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return null;
+        };
+
+        ReactDOM.render(<MarriageHealthCheck />, document.getElementById('root'));
+    </script>
+</body>
+</html>
